@@ -1,5 +1,5 @@
-var passport = require('passport'),
-    strategy = require('passport-dummy').Strategy;
+var passport = require('passport');
+var strategy = require('passport-dummy').Strategy;
 
 server = servers.Passport.extend({
     key: 'dummy',

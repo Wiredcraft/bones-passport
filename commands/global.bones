@@ -1,5 +1,5 @@
-var path = require('path'),
-    fs = require('fs');
+var path = require('path');
+var fs = require('fs');
 
 Bones.Command.options['passport'] = {
     'title': 'passport=[path]',

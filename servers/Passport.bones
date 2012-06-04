@@ -1,11 +1,12 @@
-var passport = require('passport'),
-    util = require('util');
+var passport = require('passport');
+var util = require('util');
 
-// Passport session setup.
+// Define how we serialize the user data.
 passport.serializeUser(function(user, done) {
     done(null, user);
 });
 
+// Define how we deserialize the user data.
 passport.deserializeUser(function(obj, done) {
     done(null, new models.User(obj));
 });

@@ -1,5 +1,5 @@
-var passport = require('passport'),
-    strategy = require('passport-oauth').OAuthStrategy;
+var passport = require('passport');
+var strategy = require('passport-oauth').OAuthStrategy;
 
 server = servers.Passport.extend({
     key: 'oauth',
