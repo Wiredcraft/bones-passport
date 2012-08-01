@@ -1,63 +1,82 @@
 var passport = require('passport');
 var strategy = require('passport-openid').OpenIDStrategy;
 
-passport.use(new OpenIDStrategy({
-    returnURL: 'http://localhost:3000/auth/openid/return',
-    realm: 'http://localhost:3000/'
-  },
-  function(identifier, done) {
-    User.findByOpenID({ openId: identifier }, function (err, user) {
-      return done(err, user);
-    });
-  }
-));
-
-
 server = servers.Passport.extend({
     key: 'openid',
-    strategy: strategy,
-
-    validate: function(identifier, done) {
-        // Temporarily place the open-id credentials in the session
-        _.extend(profile, { openId: { token: token, token_secret: tokenSecret } });
-
-        return done(null, profile);
-    }
-
+    strategy: strategy
 });
 
 server.augment({
     initialize: function(parent, app) {
-        // weird inconsistency between openid and oauth: returnURL vs. callbackURL. default to callback for now.
+        var self = this;
+        _.bindAll(this, this.authCallback, this.validate, this.saveAssociation, this.loadAssociation);
+
+        // weird inconsistency between openid and oauth strategies: returnURL vs. callbackURL. default to callback url for now.
         _.extend(this.options, {
             returnURL: 'http://localhost:3000/auth/' + this.key + '/callback',
             realm: 'http://localhost:3000/'
         });
 
+        strategy.saveAssociation(function(handle, provider, algorithm, secret, expiresIn, done) {
+            // custom storage implementation
+            self.saveAssociation(handle, provider, algorithm, secret, expiresIn, function(err) {
+                if (err) { return done(err); }
+                return done();
+            });
+        });
+
+        strategy.loadAssociation(function(handle, done) {
+            // custom retrieval implementation
+            self.loadAssociation(handle, function(err, provider, algorithm, secret) {
+                if (err) { return done(err); }
+                return done(null, provider, algorithm, secret);
+            });
+        });
+
         parent.call(this, app);
 
-        this.get('/auth/' + this.key + '/callback',
-            passport.authenticate(this.key), function(req, res, next) {
-                // add the query parameters to the user object.
-                // This should be done by the oauth library, but for some reason
-                // it doesn't behave correctly with some variables.
-                // see: https://github.com/jaredhanson/passport-oauth/issues/1
-                _.extend(req.user, req.query);
-
-                // we don't want the query argument oauth_token
-                // in the user record.
-                delete req.user.oauth_token;
-
-                // Move the oauth credentials into the session proper,
-                // not the user record. This means we can push the
-                // user record to the client without leaking secrets.
-                req.session.oauth = req.user.oauth;
-                delete req.user.oauth;
-
-                // TODO: decide wether we want to redirect always.
-                // this is currently quite hard to bypass.
-                res.redirect('/');
-
+        // Authenticate is set up by default to look for a post body field for openid_identifier
+        app.post('/auth/' + this.key,
+            passport.authenticate('openid'),
+            function(req, res) {
+              // The request will be redirected to the user's OpenID provider for
+              // authentication, so this function will not be called.
             });
+
+        app.get('/auth/' + this.key + '/return',
+            passport.authenticate(this.key, { failureRedirect: '/auth' }),
+            this.authCallback);
     }
 });
+
+server.prototype.authCallback = function(req, res) {
+    // Successful authentication, redirect home.
+    console.log('[debug OpenId.authCallback] something is amiss.');
+    res.redirect('/');
+};
+
+// Override this whatever verification you would like to use for your project.  By default
+// we will use bones-auth.
+server.prototype.validate = function(identifier, done) {
+    // Retrieve the user session
+    console.log('[warning OpenID.validate] implement me.');
+    done(null);
+};
+
+// Override for maintaining protocol after openid login.
+server.prototype.saveAssociation = function(handle, provider, algorithm, secret, expiresIn, callback) {
+    console.log('[warning OpenID.saveAssociation] implement me.');
+    callback(null);
+};
+
+// Override for maintaining protocol after openid login.
+server.prototype.loadAssociation = function(handle, callback) {
+    console.log('[warning OpenID.loadAssociation] implement me.');
+    var err = null;
+    var provider = null;
+    var algorithm = null;
+    var secret = null;
+    callback(err, provider, algorithm, secret);
+};
+
+
