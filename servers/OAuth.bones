@@ -4,8 +4,8 @@ var strategy = require('passport-oauth').OAuthStrategy;
 server = servers.Passport.extend({
     key: 'oauth',
     strategy: strategy,
-       
-    verify: function(token, tokenSecret, profile, done) {
+
+    validate: function(token, tokenSecret, profile, done) {
         // Temporarily put the oauth details into the user object, to allow us to
         // get them into the session.
         _.extend(profile, { oauth: { token: token, token_secret: tokenSecret } });
@@ -17,11 +17,19 @@ server = servers.Passport.extend({
 
 server.augment({
     initialize: function(parent, app) {
-        this.options.callbackURL = "http://localhost:3000/auth/" + this.key + "/callback";
+        this.options.callbackURL = "http://localhost:3000/api/auth/" + this.key + "/callback";
+        // TODO XXX IMPORTANT: This was never implemented by Adrian.  Make it work.
+
+        this.options.requestTokenURL = "http://localhost:3000";
+        this.options.accessTokenURL = "http://localhost:3000";
+        this.options.authorizationURL = 'http://localhost:3000';
+        this.options.userAuthorizationURL = 'http://localhost:3000';
+        this.options.consumerKey = 'fake_key';
+        this.options.consumerSecret = 'fake_secret';
 
         parent.call(this, app);
 
-        this.get('/auth/' + this.key + '/callback', 
+        this.get('/auth/' + this.key + '/callback',
             passport.authenticate(this.key), function(req, res, next) {
                 // add the query parameters to the user object.
                 // This should be done by the oauth library, but for some reason

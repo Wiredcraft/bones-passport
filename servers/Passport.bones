@@ -1,8 +1,11 @@
 var passport = require('passport');
 var util = require('util');
+var strategy = require('passport-local').Strategy;
 
 server = Bones.Server.extend({
     options: {},
+    key: 'local', // default to a local strategy
+    strategy: strategy
 });
 
 server.prototype.initialize = function(app) {
@@ -14,8 +17,10 @@ server.prototype.initialize = function(app) {
     passport.serializeUser(this.serializeUser);
     passport.deserializeUser(this.deserializeUser);
 
+    console.log(strategy);
     // store the strategy instance in a separate variable so it can be accessed easily.
     var strategy = new this.strategy(this.options, this.validate);
+    this.strategy = strategy;
 
     // mount the passport strategy.
     passport.use(strategy);
@@ -37,6 +42,12 @@ server.prototype.initialize = function(app) {
         req.logout();
         res.redirect('/');
     });
+};
+
+// Validate the result returned from authentication.
+server.prototype.validate = function(done) {
+    // TODO: Implement me for a local strategy.
+    return done(null);
 };
 
 // Override me to implement custom serialization of user data.

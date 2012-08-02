@@ -1,5 +1,5 @@
 var passport = require('passport');
-var strategy = require('passport-openid').OpenIDStrategy;
+var strategy = require('passport-openid').Strategy;
 
 server = servers.Passport.extend({
     key: 'openid',
@@ -9,7 +9,7 @@ server = servers.Passport.extend({
 server.augment({
     initialize: function(parent, app) {
         var self = this;
-        _.bindAll(this, this.authCallback, this.validate, this.saveAssociation, this.loadAssociation);
+        _.bindAll(this);//, /*this.authCallback, */this.validate, this.saveAssociation, this.loadAssociation);
 
         // weird inconsistency between openid and oauth strategies: returnURL vs. callbackURL. default to callback url for now.
         _.extend(this.options, {
@@ -17,7 +17,11 @@ server.augment({
             realm: 'http://localhost:3000/'
         });
 
-        strategy.saveAssociation(function(handle, provider, algorithm, secret, expiresIn, done) {
+        // Initialize the strategy, etc.
+        parent.call(this, app);
+
+        // Register the association callbacks.
+        this.strategy.saveAssociation(function(handle, provider, algorithm, secret, expiresIn, done) {
             // custom storage implementation
             self.saveAssociation(handle, provider, algorithm, secret, expiresIn, function(err) {
                 if (err) { return done(err); }
@@ -25,7 +29,7 @@ server.augment({
             });
         });
 
-        strategy.loadAssociation(function(handle, done) {
+        this.strategy.loadAssociation(function(handle, done) {
             // custom retrieval implementation
             self.loadAssociation(handle, function(err, provider, algorithm, secret) {
                 if (err) { return done(err); }
@@ -33,17 +37,18 @@ server.augment({
             });
         });
 
-        parent.call(this, app);
+
 
         // Authenticate is set up by default to look for a post body field for openid_identifier
-        app.post('/auth/' + this.key,
+        this.post('/auth/' + this.key,
             passport.authenticate('openid'),
             function(req, res) {
+            console.log('What the hell happened.');
               // The request will be redirected to the user's OpenID provider for
               // authentication, so this function will not be called.
             });
 
-        app.get('/auth/' + this.key + '/return',
+        this.get('/auth/' + this.key + '/return',
             passport.authenticate(this.key, { failureRedirect: '/auth' }),
             this.authCallback);
     }
