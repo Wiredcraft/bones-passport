@@ -22,7 +22,6 @@ server.augment({
 
         this.options.requestTokenURL = "http://localhost:3000";
         this.options.accessTokenURL = "http://localhost:3000";
-        this.options.authorizationURL = 'http://localhost:3000';
         this.options.userAuthorizationURL = 'http://localhost:3000';
         this.options.consumerKey = 'fake_key';
         this.options.consumerSecret = 'fake_secret';
